@@ -48,24 +48,17 @@ class SongStorageAPI(BaseHTTPRequestHandler):
             users_list = list(users.find({}, {"_id": 1, "username": 1}))
             self._send_response(200, users_list)
 
-        elif self.path.startswith("/users/"):
-            user_id = self.path.split("/")[-1]
-            user = users.find_one({"_id": ObjectId(user_id)})
-            if user:
-                self._send_response(200, user)
-            else:
-                self._send_response(404, {"error": "User not found"})
 
         elif self.path.startswith("/users/") and self.path.endswith("/playlists"):
-            user_id = self.path.split("/")[-1]
+            user_id = self.path.split("/")[-2]
             try:
                 user = users.find_one({"_id": ObjectId(user_id)})
                 if user:
-                    self._send_response(200, user["playlists"])
+                    self._send_response(200, user.get("playlists",[]))
                 else:
                     self._send_response(404, {"error": "User not found"})
             except Exception as e:
-                self._send_response(422, {"error": "Unprocessable Entity - The ID must be a 12-byte input or a 24-character hex string"})
+                self._send_response(422, {"error": f"{e} Unprocessable Entity - The ID must be a 12-byte input or a 24-character hex string"})
 
         elif self.path.startswith("/users/") and "/playlists/" in self.path:
             user_id = self.path.split("/")[-3]
@@ -85,9 +78,16 @@ class SongStorageAPI(BaseHTTPRequestHandler):
                         self._send_response(404, {"error": "Playlist not found"})
                 else:
                     self._send_response(404, {"error": "User not found"})
-            except Exception as e:
+            except:
                 self._send_response(422, {"error": "Unprocessable Entity - The ID must be a 12-byte input or a 24-character hex string"})
 
+        elif self.path.startswith("/users/"):
+            user_id = self.path.split("/")[-1]
+            user = users.find_one({"_id": ObjectId(user_id)})
+            if user:
+                self._send_response(200, user)
+            else:
+                self._send_response(404, {"error": "User not found"})
 
     def do_POST(self):
 
@@ -155,7 +155,8 @@ class SongStorageAPI(BaseHTTPRequestHandler):
                 except:
                     self._send_response(422, {"error": "Unprocessable Entity - The ID must be a 12-byte input or a 24-character hex string"})
 
-            elif self.path.startswith("/users/") and self.path.endswith("/playlists/"):
+            elif self.path.startswith("/users/") and "/playlists/" in self.path:
+
                 user_id, playlist_id = self.path.split("/")[-3], self.path.split("/")[-1]
                 try:
                     result = users.update_one(
@@ -190,17 +191,9 @@ class SongStorageAPI(BaseHTTPRequestHandler):
 
             elif self.path.startswith("/users/") and "/playlists/" in self.path:
                 path_parts = self.path.split("/")
-                user_id = path_parts[-5]
-                playlist_id = path_parts[-3]
-                song_id = path_parts[-1] if len(path_parts) > 5 else None
+                user_id = path_parts[-3]
+                playlist_id = path_parts[-1]
                 try:
-                    if song_id:
-                        result = users.update_one({"_id": ObjectId(user_id), "playlists._id": ObjectId(playlist_id)},{"$pull": {"playlists.$.songs": {"_id": ObjectId(song_id)}}})
-                        if result.modified_count:
-                            self._send_response(200, {"message": "Song removed from playlist"})
-                        else:
-                            self._send_response(404, {"error": "Song not found in playlist or invalid user/playlist"})
-                    else:
                         result = users.update_one({"_id": ObjectId(user_id)},{"$pull": {"playlists": {"_id": ObjectId(playlist_id)}}})
                         if result.modified_count:
                             self._send_response(200, {"message": "Playlist deleted"})
@@ -215,5 +208,5 @@ class SongStorageAPI(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     server_address = ("", 8000)
     httpd = HTTPServer(server_address, SongStorageAPI)
-    print("Server running on port 8000...")
+    print("Port 8000: server running")
     httpd.serve_forever()
