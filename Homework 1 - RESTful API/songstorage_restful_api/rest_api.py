@@ -159,6 +159,19 @@ class SongStorageAPI(BaseHTTPRequestHandler):
 
                 user_id, playlist_id = self.path.split("/")[-3], self.path.split("/")[-1]
                 try:
+                    user = users.find_one({"_id": ObjectId(user_id)}, {"playlists": 1})
+
+                    if not user:
+                        self._send_response(404, {"error": "User not found"})
+                        return
+
+                    playlist = next((p for p in user["playlists"] if str(p["_id"]) == playlist_id), None)
+
+                    if not playlist:
+                        self._send_response(404, {"error": "Playlist not found"})
+                        return
+
+                    post_data["_id"] = ObjectId(playlist_id)
                     result = users.update_one(
                         {"_id": ObjectId(user_id), "playlists._id": ObjectId(playlist_id)},
                         {"$set": {"playlists.$": post_data}}
