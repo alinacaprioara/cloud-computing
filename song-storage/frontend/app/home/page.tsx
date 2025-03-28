@@ -4,14 +4,16 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PlaylistCard from '@/components/PlaylistCard';
 import { Song } from '@/components/SongCard';
-import Link from 'next/link'
+import Link from 'next/link';
 
 type Playlist = {
     _id: string;
     name: string;
     songs: Song[];
-    imageUrl?: string;
+    imageUrl?: string | null;
 };
+
+
 
 export default function HomePage() {
     const router = useRouter();
@@ -29,7 +31,6 @@ export default function HomePage() {
         }
 
         setUsername(username);
-        localStorage.setItem('username', username);
 
         const fetchPlaylists = async () => {
             try {
@@ -37,13 +38,15 @@ export default function HomePage() {
                 if (!res.ok) throw new Error('Failed to fetch playlists');
                 const data: Playlist[] = await res.json();
 
+                // For each playlist, fetch a NASA image using a random date
                 const playlistsWithImages = await Promise.all(
                     data.map(async (playlist) => {
                         try {
-                            const imageRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/nasa/search?query=${playlist.name}`);
+                            const imageRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/nasa/apod`);
                             const imageData = await imageRes.json();
                             return { ...playlist, imageUrl: imageData.imageUrl || null };
-                        } catch {
+                        } catch (err) {
+                            console.error('Error fetching NASA image:', err);
                             return { ...playlist, imageUrl: null };
                         }
                     })
@@ -60,9 +63,7 @@ export default function HomePage() {
         fetchPlaylists();
     }, [router]);
 
-
-
-        return (
+    return (
         <>
             <header className="bg-black text-white py-4 px-6 shadow-md sticky top-0 z-50">
                 <div className="max-w-5xl mx-auto flex justify-between items-center">
@@ -106,8 +107,6 @@ export default function HomePage() {
                                     )}
                                 </div>
                             </Link>
-
-
                         ))}
                     </div>
                 )}

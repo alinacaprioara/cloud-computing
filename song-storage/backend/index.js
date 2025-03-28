@@ -16,7 +16,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 
-app.use(nasaRoutes);
+
 
 app.use(cors());
 app.use(express.json());
@@ -26,6 +26,7 @@ app.use(morgan('dev'));
 app.use('/songs', songRoutes);
 app.use('/users', userRoutes);
 app.use('/api/discogs', discogsRoutes);
+app.use('/nasa', nasaRoutes);
 
 
 app.listen(port, () => {

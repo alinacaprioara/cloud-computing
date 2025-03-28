@@ -8,6 +8,7 @@ type Playlist = {
     _id: string;
     name: string;
     songs: Song[];
+    imageUrl?: string | null;
 };
 
 export default function PlaylistPage() {
@@ -42,9 +43,20 @@ export default function PlaylistPage() {
                 const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/playlists/${id}`);
                 if (!res.ok) throw new Error('Failed to fetch playlist');
                 const data = await res.json();
+
+                let imageUrl = null;
+                try {
+                    const imageRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/nasa/apod`);
+                    const imageData = await imageRes.json();
+                    imageUrl = imageData.imageUrl;
+                } catch (error) {
+                    console.error('Error fetching NASA image:', error);
+                }
+
                 setPlaylist({
                     ...data,
                     songs: data.songs || [],
+                    imageUrl: imageUrl
                 });
                 setNewName(data.name);
             } catch (err) {
@@ -168,36 +180,39 @@ export default function PlaylistPage() {
             </header>
 
             {/* Discogs Search Section */}
-            <div className="bg-white shadow rounded-lg p-6 mt-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Search Songs (Discogs)</h2>
-                <div className="flex gap-2 mb-4">
-                    <input
-                        type="text"
-                        placeholder="Search for songs..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="border p-2 rounded flex-1 text-gray-900"
-                    />
-                    <button
-                        onClick={handleSearch}
-                        className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-                    >
-                        {searching ? 'Searching...' : 'Search'}
-                    </button>
-                </div>
+            <div className="p-6 max-w-5xl mx-auto">
+                <div className="bg-white shadow rounded-lg p-6 mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Search Songs (Discogs)</h2>
+                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                        <input
+                            type="text"
+                            placeholder="Search for songs..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="border p-2 rounded w-full sm:flex-1 text-gray-900"
+                        />
+                        <button
+                            onClick={handleSearch}
+                            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                        >
+                            {searching ? 'Searching...' : 'Search'}
+                        </button>
+                    </div>
 
-                {searchResults.length > 0 && (
-                    <ul className="space-y-3">
-                        {searchResults.map((result, idx) => (
-                            <li key={`${result.id}-${idx}`} className="border p-3 rounded shadow">
-                                <p className="font-semibold text-gray-900">{result.title}</p>
-                                {result.year && <p className="text-sm text-gray-600">Year: {result.year}</p>}
-                                {result.genre && <p className="text-sm text-gray-600">Genres: {result.genre.join(', ')}</p>}
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                    {searchResults.length > 0 && (
+                        <ul className="space-y-3">
+                            {searchResults.map((result, idx) => (
+                                <li key={`${result.id}-${idx}`} className="border p-3 rounded shadow">
+                                    <p className="font-semibold text-gray-900">{result.title}</p>
+                                    {result.year && <p className="text-sm text-gray-600">Year: {result.year}</p>}
+                                    {result.genre && <p className="text-sm text-gray-600">Genres: {result.genre.join(', ')}</p>}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
             </div>
+
 
 
             {/* Main Content */}
@@ -210,6 +225,13 @@ export default function PlaylistPage() {
                 </button>
 
                 {/* Playlist Card */}
+                {playlist.imageUrl && (
+                    <div
+                        className="h-48 mb-6 rounded-lg shadow-lg bg-cover bg-center"
+                        style={{ backgroundImage: `url(${playlist.imageUrl})` }}
+                    />
+                )}
+
                 <div className="bg-white shadow rounded-lg p-6 mb-6">
                     <div className="flex items-center gap-2 mb-4">
                         <input

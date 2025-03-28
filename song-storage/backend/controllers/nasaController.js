@@ -1,11 +1,11 @@
 const nasaService = require('../services/nasaService');
 
 exports.searchImage = async (req, res) => {
-    try {
-        const { query } = req.query;
-        if (!query) return res.status(400).json({ error: 'Missing query' });
 
-        const imageUrl = await nasaService.searchNasaImages(query);
+    console.log("🎯 /nasa/apod called");
+    try {
+
+        const imageUrl = await nasaService.searchNasaImages();
         if (!imageUrl) return res.status(404).json({ error: 'No image found' });
 
         res.json({ imageUrl });
