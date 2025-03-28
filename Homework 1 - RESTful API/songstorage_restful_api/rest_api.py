@@ -106,7 +106,7 @@ class SongStorageAPI(BaseHTTPRequestHandler):
                 song_id = songs.insert_one(post_data).inserted_id
                 location_header = f"/songs/{str(song_id)}"
 
-                self._send_response(201, {"message": "Song added", "id": str(song_id)}, headers={"Location": location_header})
+                self._send_response(201, song_id)
 
             elif self.path == "/users":
                 user_id = users.insert_one(post_data).inserted_id
@@ -149,7 +149,12 @@ class SongStorageAPI(BaseHTTPRequestHandler):
                         {"$set": post_data}
                     )
                     if result.matched_count:
-                        self._send_response(200, {"message": "Song updated"})
+                        updated_song = songs.find_one({"_id": ObjectId(song_id)})
+                        if updated_song:
+                            updated_song["_id"] = str(updated_song["_id"])
+                            self._send_response(200, updated_song)
+                        else:
+                            self._send_response(404, {"error": "Song not found after update"})
                     else:
                         self._send_response(404, {"error": "Song not found"})
                 except:
@@ -177,9 +182,19 @@ class SongStorageAPI(BaseHTTPRequestHandler):
                         {"$set": {"playlists.$": post_data}}
                     )
                     if result.matched_count:
-                        self._send_response(200, {"message": "Playlist updated"})
-                    else:
-                        self._send_response(404, {"error": "Playlist not found or user does not exist"})
+                        updated_user = users.find_one({"_id": ObjectId(user_id)}, {"playlists": 1})
+                        updated_playlist = next((p for p in updated_user["playlists"] if str(p["_id"]) == playlist_id),
+                                                None)
+                        if updated_playlist:
+                            updated_playlist["_id"] = str(updated_playlist["_id"])
+                            for song in updated_playlist.get("songs", []):
+                                if "_id" in song:
+                                    song["_id"] = str(song["_id"])
+
+                            self._send_response(200, updated_playlist)
+                        else:
+                            self._send_response(404, {"error": "Updated playlist not found"})
+
                 except:
                     self._send_response(422, {"error": "Unprocessable Entity - The ID must be a 12-byte input or a 24-character hex string"})
         except Exception as e:

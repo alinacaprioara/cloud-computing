@@ -15,13 +15,11 @@ export default function LoginPage() {
         }
 
         try {
-            // First, try to fetch the user
             const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`);
             const users = await res.json();
 
             let user = users.find((u: any) => u.username === username);
 
-            // If user doesn't exist, create it
             if (!user) {
                 const createRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users`, {
                     method: 'POST',
@@ -36,11 +34,10 @@ export default function LoginPage() {
                 user = await createRes.json();
             }
 
-            // Save user data locally
-            localStorage.setItem('username', user.username);
+            localStorage.setItem('username', username);
             localStorage.setItem('userId', user._id);
 
-            // Redirect to home
+
             router.push('/home');
         } catch (err) {
             console.error(err);
