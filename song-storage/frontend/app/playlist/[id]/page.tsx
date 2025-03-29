@@ -11,6 +11,11 @@ type Playlist = {
     imageUrl?: string | null;
 };
 
+type Track = {
+    name: string;
+};
+
+
 export default function PlaylistPage() {
     const {id} = useParams();
     const router = useRouter();
@@ -26,9 +31,8 @@ export default function PlaylistPage() {
     const [spotifyUrl, setSpotifyUrl] = useState('');
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
-
+    const [topTracks, setTopTracks] = useState<Track[]>([]);
 
 
     useEffect(() => {
@@ -151,19 +155,66 @@ export default function PlaylistPage() {
 
     const handleSearch = async () => {
         if (!searchQuery) return;
-
         setSearching(true);
+
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discogs/search?q=${searchQuery}`);
-            if (!res.ok) throw new Error('Failed to search songs');
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/lastfm/toptracks?artist=${searchQuery}`);
+            if (!res.ok) throw new Error('Failed to fetch top tracks');
             const data = await res.json();
-            setSearchResults(data);
+            setTopTracks(data);
         } catch (error) {
             console.error(error);
         } finally {
             setSearching(false);
         }
     };
+
+    const handleAddTopTrack = async (track: any) => {
+        const userId = localStorage.getItem('userId');
+
+        const newSong = {
+            title: track.name,
+            artist: searchQuery,
+            album: '',
+            year: '',
+            genre: '',
+            spotifyUrl: track.url,
+        };
+
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/songs`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newSong),
+            });
+
+            const songResponse = await res.json();
+
+            const updatedPlaylist = {
+                ...playlist,
+                songs: [...(playlist?.songs || []), {
+                    _id: songResponse,
+                    title: newSong.title,
+                    artist: newSong.artist,
+                }],
+            };
+
+            const res2 = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/${userId}/playlists/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedPlaylist),
+            });
+
+            if (res2.ok) {
+                const updated = await res2.json();
+                setPlaylist(updated);
+            }
+        } catch (error) {
+            console.error('Error adding top track:', error);
+        }
+    };
+
+
 
 
     if (loading) return <p className="p-6">Loading playlist...</p>;
@@ -182,11 +233,11 @@ export default function PlaylistPage() {
             {/* Discogs Search Section */}
             <div className="p-6 max-w-5xl mx-auto">
                 <div className="bg-white shadow rounded-lg p-6 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Search Songs (Discogs)</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Search Top 3 Songs from an Artist</h2>
                     <div className="flex flex-col sm:flex-row gap-2 mb-4">
                         <input
                             type="text"
-                            placeholder="Search for songs..."
+                            placeholder="Search artist name..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="border p-2 rounded w-full sm:flex-1 text-gray-900"
@@ -198,18 +249,6 @@ export default function PlaylistPage() {
                             {searching ? 'Searching...' : 'Search'}
                         </button>
                     </div>
-
-                    {searchResults.length > 0 && (
-                        <ul className="space-y-3">
-                            {searchResults.map((result, idx) => (
-                                <li key={`${result.id}-${idx}`} className="border p-3 rounded shadow">
-                                    <p className="font-semibold text-gray-900">{result.title}</p>
-                                    {result.year && <p className="text-sm text-gray-600">Year: {result.year}</p>}
-                                    {result.genre && <p className="text-sm text-gray-600">Genres: {result.genre.join(', ')}</p>}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
                 </div>
             </div>
 
@@ -223,6 +262,24 @@ export default function PlaylistPage() {
                 >
                     ← Back to playlists
                 </button>
+
+                {topTracks.length > 0 && (
+                    <ul className="space-y-3">
+                        {topTracks.map((track, idx) => (
+                            <li key={idx} className="border p-3 rounded shadow flex justify-between items-center">
+                                <div>
+                                    <p className="font-semibold text-gray-900">{track.name}</p>
+                                </div>
+                                <button
+                                    onClick={() => handleAddTopTrack(track)}
+                                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
+                                >
+                                    Add
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
 
                 {/* Playlist Card */}
                 {playlist.imageUrl && (

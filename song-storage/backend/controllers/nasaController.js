@@ -2,7 +2,6 @@ const nasaService = require('../services/nasaService');
 
 exports.searchImage = async (req, res) => {
 
-    console.log("🎯 /nasa/apod called");
     try {
 
         const imageUrl = await nasaService.searchNasaImages();
