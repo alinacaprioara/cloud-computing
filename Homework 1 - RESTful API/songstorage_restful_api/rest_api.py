@@ -111,7 +111,7 @@ class SongStorageAPI(BaseHTTPRequestHandler):
             elif self.path == "/users":
                 user_id = users.insert_one(post_data).inserted_id
                 location_header = f"/users/{str(user_id)}"
-                self._send_response(201, {"message": "User added", "id": str(user_id)}, headers={"Location": location_header})
+                self._send_response(201, {"_id": str(user_id)}, headers={"Location": location_header})
 
             elif self.path.startswith("/users/") and "/playlists" in self.path:
                 user_id = self.path.split("/")[-2]
@@ -124,7 +124,7 @@ class SongStorageAPI(BaseHTTPRequestHandler):
                     )
                     if result.matched_count:
                         location_header = f"/users/{user_id}/playlists/{str(playlist_data['_id'])}"
-                        self._send_response(201, {"message": "Playlist added", "playlist_id": str(playlist_data["_id"])}, headers={"Location": location_header})
+                        self._send_response(201, str(playlist_data["_id"]), headers={"Location": location_header})
                     else:
                         self._send_response(404, {"error": "User not found"})
                 except:

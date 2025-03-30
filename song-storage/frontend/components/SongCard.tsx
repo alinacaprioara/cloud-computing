@@ -6,7 +6,6 @@ export type Song = {
     _id: string;
     title: string;
     artist: string;
-    spotifyUrl?: string;
 };
 
 type SongCardProps = {
@@ -19,18 +18,6 @@ const SongCard: React.FC<SongCardProps> = ({ song, onDelete }) => {
         <div className="p-3 border rounded flex justify-between items-center hover:shadow-sm transition-shadow">
             <div>
                 <p className="font-medium text-base">
-                    {song.spotifyUrl ? (
-                        <a
-                            href={song.spotifyUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                        >
-                            {song.title}
-                        </a>
-                    ) : (
-                        song.title
-                    )}
                 </p>
                 <p className="text-sm text-gray-600">{song.artist}</p>
             </div>

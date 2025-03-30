@@ -3,8 +3,6 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 
-
-
 require('dotenv').config();
 
 const songRoutes = require('./routes/songRoutes');
@@ -15,8 +13,6 @@ const lastfmRoutes = require('./routes/lastfmRoutes');
 
 const app = express();
 const port = process.env.PORT || 5000;
-
-
 
 
 app.use(cors());

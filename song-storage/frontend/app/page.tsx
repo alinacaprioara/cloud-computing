@@ -55,7 +55,6 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full border p-2 mb-4 rounded"
             />
-            {error && <p className="text-red-500 mb-2">{error}</p>}
             <button
                 onClick={handleLogin}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full"
